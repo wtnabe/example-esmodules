@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "http-server": "^13.0.1"
+  },
+  "scripts": {
+    "dev": "http-server src -t 0 -a 0.0.0.0 -p 8000"
+  }
+}

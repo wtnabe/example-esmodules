@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width">
+    <title>ES Modulesに関係する挙動を確認する</title>
+    <script>
+      var globalLeak = 1 // not in function
+    </script>
+    <style>
+      h1 { font-size: 1.3rem; }
+      h2 { font-size: 1.2rem; }
+    </style>
+  </head>
+  <body>
+    <h1>type="module" な script は何が変わるのか？</h1>
+
+    <h2>三行で</h2>
+
+    <ul>
+      <li>defer 相当</li>
+      <li>use strict</li>
+      <li>同じ import 元は一回しか実行されない（名前がぶつかるという意味でなく）</li>
+    </ul>
+
+    <h2>もう少し詳しく</h2>
+
+    <ul>
+      <li>defer 相当なので 読み込みは rendering を block せず、DOMContentLoaded や Contents の Paint が早くなる（Profile 取ろう）
+        <ul>
+          <li>要はコンテンツがシュッと表示される</li>
+        </ul>
+      </li>
+      <li>module の中は use strict なので leak しないが、global object へアクセスはできる。GTM や GA などの function はどこからでも使える。</li>
+      <li>例えばあちこちで同じ module を import していても無駄な転送や実行は起きない</li>
+    </ul>
+
+    <hr>
+
+    <h2>Stimulusアプリで実験</h2>
+
+    <p>console を開いて確認してね。</p>
+
+    <div data-controller="example"></div>
+
+    <h3>結果</h3>
+
+    <ul>
+      <li>import 先の module 内から global object へはアクセス可能</li>
+      <li>module を 2回 import しようとしているが、 module 内から console.log() で出力されるメッセージは一つしかない</li>
+      <li>同じ HTML の中にあっても別々の type="module" で定義した class へはアクセスできない</li>
+    </ul>
+
+    <script type="module">
+      import 'https://cdn.jsdelivr.net/npm/stimulus@2.0.0/dist/stimulus.umd.min.js'
+
+      import { ExampleController } from './example-controller.js'
+      // ↓ 名前がぶつからないようにしても実行されない
+      import { ExampleController as Example2Controller } from './example-controller.js'
+
+      const app = Stimulus.Application.start()
+      app.register('example', ExampleController)
+    </script>
+    <script type="module">
+      // ↑ 上で import した ExampleController へはアクセスできない
+      try {
+        console.log(ExampleController)
+      } catch (e) {
+        console.log(e)
+        console.log('cannot access ExampleController class defined in another script')
+      }
+    </script>
+  </body>
+</html>
